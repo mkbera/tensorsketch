@@ -57,11 +57,11 @@ int  main(int argc, char* argv[]) {
 	}
 	ofstream fout;
 	fout.open(logfile);
-	MultiplicationResult* result = CountSketchTransform(A_matrices, c, k, n, d, p);
-	std::vector <mat> SA_matrices = result->A_matrices;
+	MultiplicationResult* result = TensorSketchTransform(A_matrices, c, k, n, d, p);
+	mat SA_matrix = result->A_matrix;
 	vec Sc = result->c;
 
-	LinRegSoln approx_soln = LinearRegression(SA_matrices, Sc, k, d, p);
+	LinRegSoln approx_soln = LinearRegression(SA_matrix, Sc, k, d, p);
 	vec x_approx = approx_soln.x_opt;
 	double approx_time = approx_soln.time;
 

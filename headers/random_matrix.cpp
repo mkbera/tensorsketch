@@ -5,7 +5,7 @@
 
 class MultiplicationResult {
 public:
-	std::vector <mat> A_matrices;
+	mat A_matrix;
 	vec c;
 	double time;
 };
