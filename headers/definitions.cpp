@@ -2,6 +2,7 @@
 #define DEFINITIONS_CPP
 
 #include  <Eigen/Core>
+#include <bits/stdc++.h> 
 #include <Eigen/SVD>
 #include  <iostream>
 #include <math.h>
@@ -16,6 +17,7 @@
 
 using  namespace  std;
 using  namespace  Eigen;
+typedef complex<double> cd; 
 
 #define mat MatrixXd
 #define MIN 0.00001

@@ -1,5 +1,8 @@
 #ifndef TENSORSKETCH_CPP
 #define TENSORSKETCH_CPP
+int isPowerOfTwo(int n){
+    return( n>0 && ( (n&(n-1))==0) );
+}
 
 // vec _MultiplyC(std::vector<int*> C_rows, std::vector<int*> C_values, vec x, int k, int n, int p, int r) {
 // 	int* C_row_first = C_rows[p-r];
@@ -29,6 +32,90 @@
 // 	Map <vec> x_vector_form(C_rest_x_C_first_T.data(), (int)pow(k, r));
 // 	return x_vector_form;
 // }
+void bit_reversal(std::vector<double>& A, int start, int size) {
+	assert(isPowerOfTwo(size));
+	if (size == 2) return;
+	double* oddPlaces = (double*)malloc((size/2)*sizeof(double));
+	double* evenPlaces = (double*)malloc((size/2)*sizeof(double));
+	for (int i=start, j=0; i<start+size; i+=2, j++) {
+		oddPlaces[j] = A[i];
+		evenPlaces[j] = A[i+1];
+	}
+	for (int i=start, j=0; i<start+size/2; i++, j++) {
+		A[i] = oddPlaces[j];
+		A[i+size/2] = evenPlaces[j];
+	}
+	bit_reversal(A, start, size/2);
+	bit_reversal(A, start+size/2, size/2);
+}
+
+vector<cd> fft(vector<cd>& a) 
+{ 
+    int n = a.size(); 
+
+    // if input contains just one element 
+    if (n == 1) 
+        return vector<cd>(1, a[0]); 
+
+    // For storing n complex nth roots of unity 
+    vector<cd> w(n); 
+    for (int i = 0; i < n; i++) { 
+        double alpha = 2 * M_PI * i / n; 
+        w[i] = cd(cos(alpha), sin(alpha)); 
+    } 
+
+    vector<cd> A0(n / 2), A1(n / 2); 
+    for (int i = 0; i < n / 2; i++) { 
+
+        // even indexed coefficients 
+        A0[i] = a[i * 2]; 
+
+        // odd indexed coefficients 
+        A1[i] = a[i * 2 + 1]; 
+    } 
+
+    // Recursive call for even indexed coefficients 
+    vector<cd> y0 = fft(A0); 
+
+    // Recursive call for odd indexed coefficients 
+    vector<cd> y1 = fft(A1); 
+
+    // for storing values of y0, y1, y2, ..., yn-1. 
+    vector<cd> y(n); 
+
+    for (int k = 0; k < n / 2; k++) { 
+        y[k] = y0[k] + w[k] * y1[k]; 
+        y[k + n / 2] = y0[k] - w[k] * y1[k]; 
+    } 
+    return y; 
+} 
+
+
+std::vector<double> circ_conv(std::vector<double> A, 
+std::vector<double> B) {
+	int N = A.size();
+	FFT(A, false);
+	FFT(B, false);
+	std::vector<double> C(N);
+	for (int i=0; i<N; i++) {
+		C[i] = A[i]*B[i];
+	}
+	FFT(C, true);
+	return C;
+}
+
+std::vector<double> convolution (std::vector<double> A, 
+std::vector<double> B) {
+	int sizeA = A.size();
+	int sizeB = B.size();
+	int N = 1;
+	while (N < sizeA + sizeB - 1) N *= 2;
+	for (int i=0; i<N-sizeA; i++) A.push_back(0);
+	for (int i=0; i<N-sizeB; i++) B.push_back(0);
+	std::vector<double> C = circ_conv(A, B);
+	return C[:sizeA + sizeB - 1];
+
+}
 
 int get_kronecker_product_column_number(int* column_numbers, int d, int p) {
 	// assert(column_numbers.size() == p);
