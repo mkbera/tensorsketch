@@ -1,102 +1,108 @@
 #ifndef TENSORSKETCH_CPP
 #define TENSORSKETCH_CPP
+typedef std::complex<double> cd; 
+typedef std::vector<double> Poly;
+const double PI = 3.1415926536; 
+
+Poly polynomialModuloDivision(Poly N, int k) {
+/* N is the dividend, and D is the divisor */
+	Poly D(k+1);
+	D[k] = 1; D[0] = -1;
+	int dN = N.size() - 1;
+	int dD = D.size() - 1;
+	assert(dN >= dD);
+	for (int i=1; i<dD; i++) {
+		assert(abs(D[i]) < 1e-4);
+	}
+	int dd, dq, dr;
+	dq = dr = dN - dD;
+	Poly d(dN+1), q(dq+1, 0), r(dr+1, 0);
+	while (dN >= dD) {
+		d.assign(d.size(), 0);
+		d[dN-dD] = D[0];
+		d[dN] = D[dD]; 
+		// for( i = 0 ; i <= dD ; i++ ) d[i+dN-dD] = D[i];
+		dd = dN;
+		q[dN-dD] = N[dN]/d[dd];
+		d[dN-dD] *= q[dN-dD];
+		d[dN] *= q[dN-dD]; 
+		// for( i = 0 ; i < dq + 1 ; i++ ) d[i] = d[i] * q[dN-dD];
+		N[dN-dD] -=  d[dN-dD];
+		N[dN] -= d[dN];
+		// for( i = 0 ; i < dN + 1 ; i++ ) N[i] = N[i] - d[i];
+		dN--;
+
+	}
+
+	for (int i=0; i<= dN; i++) r[i] = N[i];
+	r.resize(dN+1);
+	return r;
+}
+
 int isPowerOfTwo(int n){
     return( n>0 && ( (n&(n-1))==0) );
 }
 
-// vec _MultiplyC(std::vector<int*> C_rows, std::vector<int*> C_values, vec x, int k, int n, int p, int r) {
-// 	int* C_row_first = C_rows[p-r];
-// 	int* C_value_first = C_values[p-r];
-// 	if (r == 1) {
-// 		vec x_result = vec::Zero(k);
-// 		for (int j=0; j<n; j++) {
-// 			int source_row = j;
-// 			int target_row = C_row_first[j];
-// 			int rademacher = C_value_first[j];
-// 			x_result.row(target_row) += rademacher * x.row(source_row);
-// 		}
-// 		return x_result;
-// 	}
-// 	Map <mat> x_matrix_form(x.data(), (int)pow(n, r-1), n);
-// 	mat x_C_first_T = mat::Zero((int)pow(n, r-1), k);
-// 	for (int j=1; j<n; j++) {
-// 		int source_row = j;
-// 		int target_row = C_row_first[j];
-// 		int rademacher = C_value_first[j];
-// 		x_C_first_T.col(target_row) += rademacher * x_matrix_form.col(source_row);
-// 	}
-// 	mat C_rest_x_C_first_T((int)pow(k, r-1), k);
-// 	for (int i=0; i<k; i++) {
-// 		C_rest_x_C_first_T.col(i) = _MultiplyC(C_rows, C_values, x, k, n, p, r-1);
-// 	}
-// 	Map <vec> x_vector_form(C_rest_x_C_first_T.data(), (int)pow(k, r));
-// 	return x_vector_form;
-// }
-void bit_reversal(std::vector<double>& A, int start, int size) {
-	assert(isPowerOfTwo(size));
-	if (size == 2) return;
-	double* oddPlaces = (double*)malloc((size/2)*sizeof(double));
-	double* evenPlaces = (double*)malloc((size/2)*sizeof(double));
-	for (int i=start, j=0; i<start+size; i+=2, j++) {
-		oddPlaces[j] = A[i];
-		evenPlaces[j] = A[i+1];
-	}
-	for (int i=start, j=0; i<start+size/2; i++, j++) {
-		A[i] = oddPlaces[j];
-		A[i+size/2] = evenPlaces[j];
-	}
-	bit_reversal(A, start, size/2);
-	bit_reversal(A, start+size/2, size/2);
-}
-
-vector<cd> fft(vector<cd>& a) 
+int bitReverse(unsigned int x, int log2n) 
 { 
-    int n = a.size(); 
-
-    // if input contains just one element 
-    if (n == 1) 
-        return vector<cd>(1, a[0]); 
-
-    // For storing n complex nth roots of unity 
-    vector<cd> w(n); 
-    for (int i = 0; i < n; i++) { 
-        double alpha = 2 * M_PI * i / n; 
-        w[i] = cd(cos(alpha), sin(alpha)); 
+    int n = 0; 
+    for (int i = 0; i < log2n; i++) 
+    { 
+        n <<= 1; 
+        n |= (x & 1); 
+        x >>= 1; 
     } 
-
-    vector<cd> A0(n / 2), A1(n / 2); 
-    for (int i = 0; i < n / 2; i++) { 
-
-        // even indexed coefficients 
-        A0[i] = a[i * 2]; 
-
-        // odd indexed coefficients 
-        A1[i] = a[i * 2 + 1]; 
-    } 
-
-    // Recursive call for even indexed coefficients 
-    vector<cd> y0 = fft(A0); 
-
-    // Recursive call for odd indexed coefficients 
-    vector<cd> y1 = fft(A1); 
-
-    // for storing values of y0, y1, y2, ..., yn-1. 
-    vector<cd> y(n); 
-
-    for (int k = 0; k < n / 2; k++) { 
-        y[k] = y0[k] + w[k] * y1[k]; 
-        y[k + n / 2] = y0[k] - w[k] * y1[k]; 
-    } 
-    return y; 
+    return n; 
 } 
 
+int logBase2(int n) {
+	assert(isPowerOfTwo(n));
+	int k = 0, m = 1;
+	while(m < n) {
+		m *= 2;
+		k += 1;
+	}
+	assert(m == n);
+	return k;
+}
 
-std::vector<double> circ_conv(std::vector<double> A, 
-std::vector<double> B) {
+void FFT(vector<cd>& polynomial, bool inverse) 
+{ 
+    int n = polynomial.size(); 
+    int log2n = logBase2(n);
+    std::vector<cd> transform (n);
+    for (int i = 0; i < n; ++i) { 
+        int rev = bitReverse(i, log2n); 
+        transform[i] = polynomial[rev]; 
+    } 
+    const complex<double> J(0, 1); 
+    for (int s = 1; s <= log2n; ++s) { 
+        int m = 1 << s;
+        int m2 = m >> 1;
+        cd w(1, 0); 
+        if (inverse) cd wm = exp(- J * (PI / m2)); 
+        else cd wm = exp(J * (PI / m2)); 
+        for (int j = 0; j < m2; ++j) { 
+            for (int k = j; k < n; k += m) { 
+                cd t = w * transform[k + m2];  
+                cd u = transform[k]; 
+                transform[k] = u + t;  
+                transform[k + m2] = u - t;  
+            } 
+            w *= wm; 
+        } 
+    }
+    for(int i=0; i<n; i++) {
+    	polynomial[i] = transform[i];
+    }
+}
+
+std::vector<cd> circ_conv(std::vector<cd> A, 
+std::vector<cd> B) {
 	int N = A.size();
 	FFT(A, false);
 	FFT(B, false);
-	std::vector<double> C(N);
+	std::vector<cd> C(N);
 	for (int i=0; i<N; i++) {
 		C[i] = A[i]*B[i];
 	}
@@ -110,11 +116,45 @@ std::vector<double> B) {
 	int sizeB = B.size();
 	int N = 1;
 	while (N < sizeA + sizeB - 1) N *= 2;
-	for (int i=0; i<N-sizeA; i++) A.push_back(0);
-	for (int i=0; i<N-sizeB; i++) B.push_back(0);
-	std::vector<double> C = circ_conv(A, B);
-	return C[:sizeA + sizeB - 1];
+	A.resize(N, 0);
+	B.resize(N, 0);
+	std::vector<cd> A_complex(N), B_complex(N);
+	for (int i=0; i<N; i++) {
+		A_complex[i] = cd(A[i], 0);
+		B_complex[i] = cd(B[i], 0);
+	}
+	// for (int i=0; i<N-sizeA; i++) A.push_back(0);
+	// for (int i=0; i<N-sizeB; i++) B.push_back(0);
+	std::vector<cd> C_complex = circ_conv(A_complex, B_complex);
+	assert(C.size() == N);
+	std::vector<double> C (N);
+	for (int i=0; i<N; i++) {
+		assert(abs(C_complex[i].imag()) < 1e-4 )
+		C[i] = C_complex[i].real();
+	} 
+	C.resize(sizeA + sizeB - 1);
+	return C;
+}
 
+std::vector<double> multiply_polynomials 
+(std::vector<std::vector<double>> polynomials) {
+	int k = polynomials[0].size();
+	int k_two = 1;
+	while (k_two < 2*k-1) k_two *= 2;
+	std::vector<double> result_polynomial;
+	if (polynomials.size() == 1) {
+		result_polynomial = polynomials[0];
+		return result_polynomial;
+	}
+	result_polynomial = convolution(polynomials[0], polynomials[1]);
+	for (int i=2; i<polynomials.size(); i++) {
+		assert(polynomials[i].size() == k);
+		if (result_polynomial.size() + k - 1 > k_two) {
+			polynomialModuloDivision(result_polynomial);
+		}
+		result_polynomial = convolution(result_polynomial, polynomials[i]);
+	}
+	return result_polynomial;
 }
 
 int get_kronecker_product_column_number(int* column_numbers, int d, int p) {
@@ -129,9 +169,9 @@ int get_kronecker_product_column_number(int* column_numbers, int d, int p) {
 	return kron_prod_col_num;
 }
 
-void multiply_polynomials (std::vector<double>& result_polynomial,
-std::vector<std::vector<double> > polynomials) {
-	
+int get_c_row_number (int* row_numbers, int n, int p) {
+	int row_num = 0;
+	for ()
 }
 
 void sketch_column (std::vector<mat>& CA_matrix_carrier,
@@ -139,10 +179,7 @@ std::vector<mat> A_matrices;
 std::vector<int*> C_rows, std::vector<int*> C_values,
 int* column_numbers,
 int k, int n, int d, int p) {
-	int kp_col_num = get_kronecker_product_column_number(column_numbers, d, p);
 	std::vector<std::vector<double>> polynomials;
-	std::vector<double> result_polynomial;
-	result_polynomial.resize(k);
 	for (int i=0; i<p; i++) {
 		std::vector<int> pol;
 		pol.resize(k);
@@ -161,7 +198,20 @@ int k, int n, int d, int p) {
 			polynomials[i][row] += v * sign;
 		}
 	}
-	multiply_polynomials (result_polynomial, polynomials)
+	std::vector<double> result_polynomial = multiply_polynomials(polynomials);
+	assert(result_polynomial.size() == k);
+	int kp_col_num = get_kronecker_product_column_number(column_numbers, d, p);
+	for(int i=0; i<k; i++) {
+		CA_matrix_carrier[0](i, kp_col_num) = result_polynomial[i];
+	}
+}
+
+void sketch_c (std::vector<mat>& Cc_carrier,
+vec c;
+std::vector<int*> C_rows, std::vector<int*> C_values,
+int* column_numbers,
+int k, int n, int d, int p) {
+	int c_row =  get_c_row_number(row_numbers, n, p)
 }
 
 void select_column (std::vector<mat>& CA_matrix_carrier, 
@@ -177,6 +227,18 @@ int k, int n, int d, int p, int index) {
 	}
 }
 
+void select_row (std::vector<vec>& Cc_carrier, 
+std::vector<int*> C_rows, std::vector<int*> C_values,
+int* row_numbers,
+int k, int n, int d, int p, int index) {
+	if (index == p) {
+		sketch_c(Cc_carrier, C_rows, C_values, row_numbers, k, n, d, p);
+	}
+	for (int i=0; i<n; i++) {
+		row_numbers[index] = i;
+		select_row(Cc_carrier, C_rows, C_values, row_numbers, k, n, d, p, index+1);
+	}
+}
 MultiplicationResult* TensorSketchTransform
 (std::vector <mat> A_matrices, vec c, int k, int n, int d, int p) {
 
@@ -224,24 +286,14 @@ MultiplicationResult* TensorSketchTransform
 	int * column_numbers = (int*) malloc (p * sizeof(int));
 	select_column(CA_matrix_carrier, C_rows, C_values, column_numbers, k, n, d, p, 0);
 
-	// multiply C and A
-	std::vector<mat> CA_matrices;
-	for (int i=0; i<p; i++) {
-		mat CA_i = mat::Zero(k, d);
-		mat A_i = A_matrices[i];
-		int* C_row_i = C_rows[i];
-		int* C_value_i = C_values[i];
-		for (int j=0; j<n; j++) {
-			int source_row = j; // of matrix A_i
-			int target_row = C_row_i[j]; // of matrix CA_i
-			int rademacher = C_value_i[j];
-			CA_i.row(target_row) += rademacher * A_i.row(source_row);
-		}
-		CA_matrices.push_back(CA_i);
-	}
+	std::vector<vec> Cc_carrier;
+	vec Cc = vec::Zero(k);
+	Cc_carrier.push_back(Cc);
+	int * row_numbers = (int*)malloc(p*sizeof(int));
+	select_row(Cc_carrier, C_rows, C_values, row_numbers, k, n, d, p, 0);
 
 	// multiply C with c
-	vec Cc = _MultiplyC(C_rows, C_values, c, k, n, p, p);
+	vec Cc = select_column(CA_matrix_carrier, C_rows, C_values, c, k, n, p, p);
 	t = clock() - t;
 	double time = ((double)t)/CLOCKS_PER_SEC;
 

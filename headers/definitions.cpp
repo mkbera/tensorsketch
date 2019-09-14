@@ -14,6 +14,7 @@
 #include <math.h>
 #include <vector>
 #include <iterator>
+#include <cstdlib>
 
 using  namespace  std;
 using  namespace  Eigen;
