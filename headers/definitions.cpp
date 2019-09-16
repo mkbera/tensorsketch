@@ -15,6 +15,7 @@
 #include <vector>
 #include <iterator>
 #include <cstdlib>
+#include <unistd.h>
 
 using  namespace  std;
 using  namespace  Eigen;
@@ -23,6 +24,12 @@ typedef complex<double> cd;
 #define mat MatrixXd
 #define MIN 0.00001
 #define vec VectorXd
+
+
+#define CROSSCHECK true
+// #define CROSSCHECK false
+// #define DEBUG true
+#define DEBUG false
 
 
 #endif // DEFINITIONS_CPP

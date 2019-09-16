@@ -2,20 +2,168 @@
 #define TENSORSKETCH_CPP
 typedef std::complex<double> cd; 
 typedef std::vector<double> Poly;
-const double PI = 3.1415926536; 
+const double PI = 3.1415926536;
+#ifndef CROSSCHECK
+	assert(false);
+#endif
+#ifndef DEBUG
+	assert(false);
+#endif
+
+
+
+int get_kronecker_product_column_number(int* column_numbers, int d, int p) {
+	// assert(column_numbers.size() == p);
+	int kron_prod_col_num = 0;
+	for (int i=0; i<p; i++) {
+		kron_prod_col_num *= d;
+		int c_n = column_numbers[i];
+		assert(c_n < d);
+		kron_prod_col_num += c_n;
+	}
+	return kron_prod_col_num;
+}
+
+int get_c_row_number (int* row_numbers, int n, int p) {
+	int row_num = 0;
+	for (int i=0; i<p; i++) {
+		row_num *= n;
+		int r_n = row_numbers[i];
+		assert(r_n < n);
+		row_num += r_n;
+	}
+	return row_num;
+}
+
+void check_CA(mat A, mat B) {
+	int n_rows = A.rows();
+	int n_cols = A.cols();
+	assert(n_rows == B.rows() && n_cols == B.cols());
+	if (DEBUG) {
+		cout << "check cA"<< endl;
+		cout << A << endl;
+		cout << "--" << endl;
+		cout << B << endl;
+	}
+	for (int i=0; i<n_rows; i++) {
+		for (int j=0; j<n_cols; j++) {
+			double value = abs(A(i, j) - B(i, j));
+			assert(value < 1e-5);
+		}
+	}
+
+
+}
+
+void naive_CA (std::vector<mat>& CA_matrix_carrier,
+std::vector<mat> A_matrices, std::vector<int*> C_rows,
+std::vector<int*> C_values, int k, int n, int d, int p) {
+	int n_rows = int(pow(n, p));
+	int n_cols = int(pow(d, p));
+	mat kronecker_matrix = mat::Zero(n_rows, n_cols);
+	int *row_numbers = (int*)malloc(p*sizeof(int));
+	int *col_numbers = (int*)malloc(p*sizeof(int));
+	int *sketch_row = (int*)malloc(n_rows*sizeof(int));
+	int* sketch_value = (int*)malloc(n_rows*sizeof(int));
+	// int * cs_row = (int *)malloc()
+	auto fill_element = [&]() {
+		int kronecker_row_num = get_c_row_number(row_numbers, n, p);
+		int kronecker_col_num = get_kronecker_product_column_number(col_numbers, d, p);
+		double value = 1;
+		for(int i=0; i<p; i++) {
+			value *= A_matrices[i](row_numbers[i], col_numbers[i]);
+		}
+		kronecker_matrix(kronecker_row_num, kronecker_col_num) = value;
+		return 0;
+	};
+	function <void (int)> naive_select_column;
+	naive_select_column = [&](int index) {
+		if (index == p) {
+			fill_element();
+			return;
+		}
+		for (int i=0; i<d; i++) {
+			col_numbers[index] = i;
+			naive_select_column(index+1);
+		}
+	};
+	auto naive_compute_sketch_row = [&]() {
+		int kronecker_row_num = get_c_row_number(row_numbers, n, p);
+		int hash = 0;
+		int sign = 1;
+		for(int i=0; i<p; i++) {
+			hash += C_rows[i][row_numbers[i]];
+			sign *= C_values[i][row_numbers[i]];
+		}
+		hash = hash % k;
+		sketch_row[kronecker_row_num] = hash;
+		sketch_value[kronecker_row_num] = sign; 
+	};
+	function <void (int)> naive_select_row;
+	naive_select_row = [&](int index) {
+		if (index == p){ 
+			naive_select_column(0);
+			naive_compute_sketch_row();
+			return;
+		}
+		for(int i=0; i<n; i++) {
+			row_numbers[index] = i;
+			naive_select_row(index+1);
+		}
+	};
+	naive_select_row(0);
+	if (DEBUG) {
+		cout << "sketch_row sketch_value" << endl;
+		for (int i=0; i<n_rows; i++) {
+			cout << sketch_row[i] << " " << sketch_value[i] << endl;
+		}
+	}
+	for (int i=0; i<n_rows; i++) {
+		for (int j=0; j<n_cols; j++) {
+			CA_matrix_carrier[0](sketch_row[i], j) += sketch_value[i] * kronecker_matrix(i, j);
+		}
+	}
+
+}
+
+Poly naive_polynomial_multiplication(Poly A, Poly B) {
+	Poly result(A.size()+B.size()-1, 0);
+	for (int i=0; i<A.size(); i++) {
+		for(int j=0; j<B.size(); j++) {
+			result[i+j] += A[i]*B[j];
+		}
+	}
+	return result;
+}
+
+void check_multiplication(Poly A, Poly B) {
+	assert(A.size() == B.size());
+	if (DEBUG) {
+		cout << "check_multiplication" << endl;
+		for (int i=0; i<A.size(); i++) cout << A[i] << " ";
+		cout << endl;
+		for (int i=0; i<B.size(); i++) cout << B[i] << " ";
+		cout << endl;
+	}
+	for (int i=0; i<A.size(); i++) {
+		double value = abs(A[i] - B[i]);
+		assert(value < 1e-5);		
+	}
+}
 
 Poly polynomialModuloDivision(Poly N, int k) {
 /* N is the dividend, and D is the divisor */
-	Poly D(k+1);
+	Poly D(k+1, 0);
 	D[k] = 1; D[0] = -1;
 	int dN = N.size() - 1;
 	int dD = D.size() - 1;
 	assert(dN >= dD);
-	for (int i=1; i<dD; i++) {
-		assert(abs(D[i]) < 1e-4);
-	}
+	// for (int i=1; i<dD; i++) {
+	// 	assert(abs(D[i]) < 1e-5);
+	// }
 	int dd, dq, dr;
-	dq = dr = dN - dD;
+	dq = dN ;
+	dr = dD - 1;
 	Poly d(dN+1), q(dq+1, 0), r(dr+1, 0);
 	while (dN >= dD) {
 		d.assign(d.size(), 0);
@@ -33,9 +181,9 @@ Poly polynomialModuloDivision(Poly N, int k) {
 		dN--;
 
 	}
-
+	assert(dN == dr);
 	for (int i=0; i<= dN; i++) r[i] = N[i];
-	r.resize(dN+1);
+	r.resize(dr+1);
 	return r;
 }
 
@@ -80,8 +228,8 @@ void FFT(vector<cd>& polynomial, bool inverse)
         int m = 1 << s;
         int m2 = m >> 1;
         cd w(1, 0); 
-        if (inverse) cd wm = exp(- J * (PI / m2)); 
-        else cd wm = exp(J * (PI / m2)); 
+        cd wm = exp(J * (PI / m2));
+        if (inverse) wm = exp(- J * (PI / m2)); 
         for (int j = 0; j < m2; ++j) { 
             for (int k = j; k < n; k += m) { 
                 cd t = w * transform[k + m2];  
@@ -93,7 +241,12 @@ void FFT(vector<cd>& polynomial, bool inverse)
         } 
     }
     for(int i=0; i<n; i++) {
-    	polynomial[i] = transform[i];
+    	if (inverse) {
+    		polynomial[i] = transform[i] * cd(1.0/n, 0);
+    	}
+    	else{
+    		polynomial[i] = transform[i];
+    	}
     }
 }
 
@@ -123,13 +276,21 @@ std::vector<double> B) {
 		A_complex[i] = cd(A[i], 0);
 		B_complex[i] = cd(B[i], 0);
 	}
-	// for (int i=0; i<N-sizeA; i++) A.push_back(0);
-	// for (int i=0; i<N-sizeB; i++) B.push_back(0);
+	if (DEBUG) {
+		for (int i=0; i<A_complex.size(); i++) cout << A_complex[i] << " ";
+		cout << endl;
+		for (int i=0; i<B_complex.size(); i++) cout << B_complex[i] << " ";
+		cout << endl;
+	}
 	std::vector<cd> C_complex = circ_conv(A_complex, B_complex);
-	assert(C.size() == N);
+	if (DEBUG){
+		for (int i=0; i<C_complex.size(); i++) cout << C_complex[i] << " ";
+		cout << endl;
+	}
+	assert(C_complex.size() == N);
 	std::vector<double> C (N);
 	for (int i=0; i<N; i++) {
-		assert(abs(C_complex[i].imag()) < 1e-4 )
+		assert(abs(C_complex[i].imag()) < 1e-5 );
 		C[i] = C_complex[i].real();
 	} 
 	C.resize(sizeA + sizeB - 1);
@@ -138,6 +299,7 @@ std::vector<double> B) {
 
 std::vector<double> multiply_polynomials 
 (std::vector<std::vector<double>> polynomials) {
+	std::vector<double> naive_result;
 	int k = polynomials[0].size();
 	int k_two = 1;
 	while (k_two < 2*k-1) k_two *= 2;
@@ -147,48 +309,52 @@ std::vector<double> multiply_polynomials
 		return result_polynomial;
 	}
 	result_polynomial = convolution(polynomials[0], polynomials[1]);
+	if (CROSSCHECK) {
+		naive_result = naive_polynomial_multiplication(polynomials[0], 
+			polynomials[1]);
+		check_multiplication(result_polynomial, naive_result);
+	}
 	for (int i=2; i<polynomials.size(); i++) {
 		assert(polynomials[i].size() == k);
 		if (result_polynomial.size() + k - 1 > k_two) {
-			polynomialModuloDivision(result_polynomial);
+			result_polynomial =	polynomialModuloDivision(result_polynomial, k);
+		}
+		if (CROSSCHECK) {
+			naive_result = naive_polynomial_multiplication(result_polynomial, 
+				polynomials[i]);
 		}
 		result_polynomial = convolution(result_polynomial, polynomials[i]);
+		if (CROSSCHECK){
+			check_multiplication(result_polynomial, naive_result);
+		}
 	}
+	if (DEBUG) {
+		cout << "result polynomial before modulo division" << endl;
+		for (int i=0; i<result_polynomial.size(); i++) {
+			cout << result_polynomial[i] << " " ;
+		}
+		cout << endl;
+	}
+	if (result_polynomial.size() > k) result_polynomial = polynomialModuloDivision(result_polynomial, k);
 	return result_polynomial;
 }
 
-int get_kronecker_product_column_number(int* column_numbers, int d, int p) {
-	// assert(column_numbers.size() == p);
-	int kron_prod_col_num = 0;
-	for (int i=0; i<p; i++) {
-		kron_prod_col_num *= d;
-		int c_n = column_numbers[i];
-		assert(c_n < d);
-		kron_prod_col_num += c_n;
-	}
-	return kron_prod_col_num;
-}
-
-int get_c_row_number (int* row_numbers, int n, int p) {
-	int row_num = 0;
-	for ()
-}
-
 void sketch_column (std::vector<mat>& CA_matrix_carrier,
-std::vector<mat> A_matrices;
+std::vector<mat> A_matrices,
 std::vector<int*> C_rows, std::vector<int*> C_values,
 int* column_numbers,
 int k, int n, int d, int p) {
 	std::vector<std::vector<double>> polynomials;
 	for (int i=0; i<p; i++) {
-		std::vector<int> pol;
+		std::vector<double> pol;
 		pol.resize(k);
 		polynomials.push_back(pol);
 	}
 	for (int i=0; i<p; i++) {
 		int col_num = column_numbers[i];
 		vec col = A_matrices[i].col(col_num);
-		assert(col.size == n);
+		// cout << "A col" << endl << col << endl << "--" << endl;
+		assert(col.size() == n);
 		int* C_row_i = C_rows[i];
 		int* C_value_i = C_values[i];
 		for (int j=0; j<n; j++) {
@@ -198,7 +364,28 @@ int k, int n, int d, int p) {
 			polynomials[i][row] += v * sign;
 		}
 	}
+	if (DEBUG) {
+		cout << "polynomials" << endl;
+		// cout << p << " " << k << endl;
+		// cout << polynomials.size() << " " << polynomials[0].size() << " " << polynomials[1].size() << endl;
+		// cout << polynomials[0][0] << " "<< polynomials[0][1] << endl;
+		// cout << polynomials[1][0] << " "<< polynomials[1][1] << endl;
+		for (int i=0; i<p; i++) {
+			for (int j=0; j<k; j++) {
+				cout << polynomials[i][j] << " " ;
+				// cout << "nan ";
+			}
+			cout << endl;
+		}
+		cout << "--" << endl;
+	}
 	std::vector<double> result_polynomial = multiply_polynomials(polynomials);
+	if (DEBUG){
+		cout << "result_polynomial" << endl;
+		for (int i=0; i<result_polynomial.size(); i++)
+			cout  << result_polynomial[i] << " " ;
+		cout << endl;
+	}
 	assert(result_polynomial.size() == k);
 	int kp_col_num = get_kronecker_product_column_number(column_numbers, d, p);
 	for(int i=0; i<k; i++) {
@@ -206,39 +393,52 @@ int k, int n, int d, int p) {
 	}
 }
 
-void sketch_c (std::vector<mat>& Cc_carrier,
-vec c;
+void sketch_c (std::vector<vec>& Cc_carrier,
+vec c,
 std::vector<int*> C_rows, std::vector<int*> C_values,
-int* column_numbers,
+int* row_numbers,
 int k, int n, int d, int p) {
-	int c_row =  get_c_row_number(row_numbers, n, p)
+	int source_row =  get_c_row_number(row_numbers, n, p);
+	int target_row = 1;
+	int sign = 1;
+	for (int i=0; i<p; i++) {
+		target_row += C_rows[i][row_numbers[i]];
+		sign *= C_values[i][row_numbers[i]];
+	}
+	target_row = target_row % k;
+	Cc_carrier[0](target_row) += sign * c(source_row);
 }
 
 void select_column (std::vector<mat>& CA_matrix_carrier, 
+std::vector<mat> A_matrices,
 std::vector<int*> C_rows, std::vector<int*> C_values,
 int* column_numbers,
 int k, int n, int d, int p, int index) {
 	if (index == p) {
-		sketch_column(CA_matrix_carrier, C_rows, C_values, column_numbers, k, n, d, p)
+		sketch_column(CA_matrix_carrier, A_matrices, C_rows, C_values, column_numbers, k, n, d, p);
+		return;
 	}
 	for (int i=0; i<d; i++) {
 		column_numbers[index] = i;
-		select_column(CA_matrix_carrier, C_rows, C_values, column_numbers, k, n, d, p, index+1);
+		select_column(CA_matrix_carrier, A_matrices, C_rows, C_values, column_numbers, k, n, d, p, index+1);
 	}
 }
 
 void select_row (std::vector<vec>& Cc_carrier, 
+vec c,
 std::vector<int*> C_rows, std::vector<int*> C_values,
 int* row_numbers,
 int k, int n, int d, int p, int index) {
 	if (index == p) {
-		sketch_c(Cc_carrier, C_rows, C_values, row_numbers, k, n, d, p);
+		sketch_c(Cc_carrier, c, C_rows, C_values, row_numbers, k, n, d, p);
+		return;
 	}
 	for (int i=0; i<n; i++) {
 		row_numbers[index] = i;
-		select_row(Cc_carrier, C_rows, C_values, row_numbers, k, n, d, p, index+1);
+		select_row(Cc_carrier, c, C_rows, C_values, row_numbers, k, n, d, p, index+1);
 	}
 }
+
 MultiplicationResult* TensorSketchTransform
 (std::vector <mat> A_matrices, vec c, int k, int n, int d, int p) {
 
@@ -264,7 +464,6 @@ MultiplicationResult* TensorSketchTransform
 		}
 		C_rows.push_back(C_row_i);
 	}
-
 	for (int i=0; i<p; i++) {
 		int * C_value_i = (int*)malloc(n * sizeof(int));
 		for (int j=0; j<n; j++) {
@@ -276,30 +475,45 @@ MultiplicationResult* TensorSketchTransform
 		}
 		C_values.push_back(C_value_i);
 	}
+	if (DEBUG) {
+		assert (n == 2 && d == 2 && p == 2 && k == 2);
+		for (int i=0; i<p; i++) {
+			C_rows[i][0] = 0;
+			C_rows[i][1] = 1;
+			// C_rows[i][2] = 0;
+			C_values[i][0] = 1;
+			C_values[i][1] = -1;
+			// C_values[i][0] = 1;
+		}
+	}
 
 	clock_t t;
 	t = clock();
-
 	std::vector<mat> CA_matrix_carrier;
 	mat CA_matrix = mat::Zero(k, int(pow(d, p)));
 	CA_matrix_carrier.push_back(CA_matrix);
 	int * column_numbers = (int*) malloc (p * sizeof(int));
-	select_column(CA_matrix_carrier, C_rows, C_values, column_numbers, k, n, d, p, 0);
-
+	select_column(CA_matrix_carrier, A_matrices, C_rows, C_values, column_numbers, k, n, d, p, 0);
 	std::vector<vec> Cc_carrier;
 	vec Cc = vec::Zero(k);
 	Cc_carrier.push_back(Cc);
 	int * row_numbers = (int*)malloc(p*sizeof(int));
-	select_row(Cc_carrier, C_rows, C_values, row_numbers, k, n, d, p, 0);
+	select_row(Cc_carrier, c, C_rows, C_values, row_numbers, k, n, d, p, 0);
 
-	// multiply C with c
-	vec Cc = select_column(CA_matrix_carrier, C_rows, C_values, c, k, n, p, p);
 	t = clock() - t;
 	double time = ((double)t)/CLOCKS_PER_SEC;
 
+	if(CROSSCHECK) {
+		std::vector<mat> naive_CA_matrix_carrier;
+		mat naive_CA_matrix = mat::Zero(k, int(pow(d, p)));
+		naive_CA_matrix_carrier.push_back(naive_CA_matrix);
+		naive_CA(naive_CA_matrix_carrier, A_matrices, C_rows, C_values, k, n, d, p);
+		check_CA(naive_CA_matrix_carrier[0], CA_matrix_carrier[0]);
+	}
+
 	MultiplicationResult* multres = new MultiplicationResult();
-	multres->A_matrices = CA_matrices;
-	multres->c = Cc;
+	multres->A_matrix = CA_matrix_carrier[0];
+	multres->c = Cc_carrier[0];
 	multres->time = time;
 
 	return multres;

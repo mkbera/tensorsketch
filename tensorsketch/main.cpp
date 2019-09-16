@@ -1,7 +1,7 @@
 #include "headers/definitions.cpp"
 #include "headers/linreg.cpp"
 #include "headers/random_matrix.cpp"
-// #include "headers/countsketch.cpp"
+#include "headers/tensorsketch.cpp"
 #include "headers/argparse.h"
 
 int  main(int argc, char* argv[]) {
@@ -60,14 +60,15 @@ int  main(int argc, char* argv[]) {
 	MultiplicationResult* result = TensorSketchTransform(A_matrices, c, k, n, d, p);
 	mat SA_matrix = result->A_matrix;
 	vec Sc = result->c;
-
+	double sketch_time = result->time;
 	LinRegSoln approx_soln = LinearRegression(SA_matrix, Sc, k, d, p);
 	vec x_approx = approx_soln.x_opt;
 	double approx_time = approx_soln.time;
 
 	double evaluation = evaluate(A_matrices, c, x_approx, n, d, p);
-	cout << approx_time << " " << evaluation << endl;
-	fout << approx_time << " " << evaluation << endl;
+
+	cout << sketch_time << " " << approx_time << " " << evaluation << endl;
+	fout << sketch_time << " " << approx_time << " " << evaluation << endl;
 	fout.close();
 	return  0;
 }
