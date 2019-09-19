@@ -10,8 +10,6 @@ const double PI = 3.1415926536;
 	assert(false);
 #endif
 
-
-
 int get_kronecker_product_column_number(int* column_numbers, int d, int p) {
 	// assert(column_numbers.size() == p);
 	int kron_prod_col_num = 0;
