@@ -12,6 +12,7 @@ int  main(int argc, char* argv[]) {
 	parser.add_argument("--d", "number of dimensions");
 	parser.add_argument("--p", "number of tensor matrices");
 	parser.add_argument("--k", "number of rows in sketching matrix");
+	parser.add_argument("--seed", "random seed");
 	try {
 		parser.parse(argc, argv);
 	} catch (const ArgumentParser::ArgumentNotFound& ex) {
@@ -24,6 +25,7 @@ int  main(int argc, char* argv[]) {
 	int d = parser.get<int>("d");
 	int p = parser.get<int>("p");
 	int k = parser.get<int>("k");
+	int seed = parser.get<int>("seed");
 	std::vector <mat> A_matrices;
 	// read the A matrices
 	for(int i=0; i<p; i++){
@@ -57,7 +59,7 @@ int  main(int argc, char* argv[]) {
 	}
 	ofstream fout;
 	fout.open(logfile);
-	MultiplicationResult* result = TensorSketchTransform(A_matrices, c, k, n, d, p);
+	MultiplicationResult* result = TensorSketchTransform(A_matrices, c, k, n, d, p, seed);
 	mat SA_matrix = result->A_matrix;
 	vec Sc = result->c;
 	double sketch_time = result->time;

@@ -26,8 +26,8 @@ typedef complex<double> cd;
 #define vec VectorXd
 
 
-#define CROSSCHECK true
-// #define CROSSCHECK false
+// #define CROSSCHECK true
+#define CROSSCHECK false
 // #define DEBUG true
 #define DEBUG false
 

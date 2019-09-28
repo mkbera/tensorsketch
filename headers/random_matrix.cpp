@@ -136,10 +136,10 @@ double evaluate (std::vector <mat> A_matrices, vec c, vec x, int n, int d, int p
 	double norm = norm_vec(0);
 	if (CROSSCHECK) {
 		double naive_norm = naive_evaluate(A_matrices, c, x, n, d, p);
-		if (DEBUG) {
-			cout << "naive norm" << endl;
-			cout << naive_norm << " " << norm << " " << abs(naive_norm - norm) <<  endl;
-		}
+		// if (DEBUG) {
+		// 	cout << "naive norm" << endl;
+		// 	cout << naive_norm << " " << norm << " " << abs(naive_norm - norm) <<  endl;
+		// }
 		assert(abs(naive_norm - norm) < 1e-5);
 	}
 	return norm;
