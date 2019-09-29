@@ -7,6 +7,9 @@ import math
 ttsketch = ['seg', 'cs', 'srht']
 vanilla = 'vanilla'
 
+mode = 'ttsketch'
+# MODE = 'tensorsketch'
+
 N = [
 	'512', 
 	# '1024', 
@@ -105,67 +108,75 @@ for n, d, p in itertools.product(N, D, P):
 			sigma_sketch_ttsketch[prog].append(sketch_time/opt_time)
 
 
-
-	plt.plot(x_axis, sigma, color='green', linestyle='dashed', linewidth = 1, 
-	         marker='o', markerfacecolor='black', markersize=4, label='tensorsketch') 
+	if (mode == 'tensorsketch'):
+		plt.plot(x_axis, sigma, color='green', linestyle='dashed', linewidth = 1, 
+		         marker='o', markerfacecolor='black', markersize=4, label='tensorsketch') 
 	plt.plot(x_axis, sigma_ttsketch['cs'], color='red', linestyle='dashed', linewidth = 1, 
 	         marker='o', markerfacecolor='black', markersize=4, label='cs') 
-	plt.plot(x_axis, sigma_ttsketch['srht'], color='blue', linestyle='dashed', linewidth = 1, 
-	         marker='o', markerfacecolor='black', markersize=4, label='srht') 
-	plt.plot(x_axis, sigma_ttsketch['seg'], color='pink', linestyle='dashed', linewidth = 1, 
-	         marker='o', markerfacecolor='black', markersize=4, label='seg') 
+	if (mode == 'ttsketch'):
+		plt.plot(x_axis, sigma_ttsketch['srht'], color='blue', linestyle='dashed', linewidth = 1, 
+		         marker='o', markerfacecolor='black', markersize=4, label='srht') 
+		plt.plot(x_axis, sigma_ttsketch['seg'], color='pink', linestyle='dashed', linewidth = 1, 
+		         marker='o', markerfacecolor='black', markersize=4, label='seg') 
 	plt.ylim(0, 3.0)
 	plt.xlabel('K: sketch rows') 
 	plt.ylabel('sigma: time/time') 
 	plt.title('n_{}_d_{}_p_{}'.format(n, d, p)) 
 	plt.legend()
-	plt.savefig('./plots/' + 'sigma:n_{}_d_{}_p_{}.png'.format(n, d, p))
+	plt.savefig('./plots/{}/'.format(mode) + 'sigma:n_{}_d_{}_p_{}.png'.format(n, d, p))
 	plt.clf()
 
-	plt.plot(x_axis, sigma_approx, color='green', linestyle='dashed', linewidth = 1, 
-	         marker='o', markerfacecolor='black', markersize=4, label='tensorsketch') 
+	if (mode == 'tensorsketch'):
+		plt.plot(x_axis, sigma_approx, color='green', linestyle='dashed', linewidth = 1, 
+		         marker='o', markerfacecolor='black', markersize=4, label='tensorsketch') 
 	plt.plot(x_axis, sigma_approx_ttsketch['cs'], color='red', linestyle='dashed', linewidth = 1, 
 	         marker='o', markerfacecolor='black', markersize=4, label='cs') 
-	plt.plot(x_axis, sigma_approx_ttsketch['srht'], color='blue', linestyle='dashed', linewidth = 1, 
-	         marker='o', markerfacecolor='black', markersize=4, label='srht') 
-	plt.plot(x_axis, sigma_approx_ttsketch['seg'], color='pink', linestyle='dashed', linewidth = 1, 
-	         marker='o', markerfacecolor='black', markersize=4, label='seg') 
+	if (mode == 'ttsketch'):
+		plt.plot(x_axis, sigma_approx_ttsketch['srht'], color='blue', linestyle='dashed', linewidth = 1, 
+		         marker='o', markerfacecolor='black', markersize=4, label='srht') 
+		plt.plot(x_axis, sigma_approx_ttsketch['seg'], color='pink', linestyle='dashed', linewidth = 1, 
+		         marker='o', markerfacecolor='black', markersize=4, label='seg') 
 	plt.ylim(0, 3.0)
 	plt.xlabel('K: sketch rows') 
 	plt.ylabel('sigma_approx: time/time') 
 	plt.title('n_{}_d_{}_p_{}'.format(n, d, p)) 
 	plt.legend()
-	plt.savefig('./plots/' + 'sigma_approx:n_{}_d_{}_p_{}.png'.format(n, d, p))
+	plt.savefig('./plots/{}/'.format(mode) + 'sigma_approx:n_{}_d_{}_p_{}.png'.format(n, d, p))
 	plt.clf()
 
-	plt.plot(x_axis, sigma_sketch, color='green', linestyle='dashed', linewidth = 1, 
-	         marker='o', markerfacecolor='black', markersize=4, label='tensorsketch') 
-	plt.plot(x_axis, sigma_sketch_ttsketch['cs'], color='red', linestyle='dashed', linewidth = 1, 
-	         marker='o', markerfacecolor='black', markersize=4, label='cs') 
-	plt.plot(x_axis, sigma_sketch_ttsketch['srht'], color='blue', linestyle='dashed', linewidth = 1, 
-	         marker='o', markerfacecolor='black', markersize=4, label='srht') 
-	plt.plot(x_axis, sigma_sketch_ttsketch['seg'], color='pink', linestyle='dashed', linewidth = 1, 
-	         marker='o', markerfacecolor='black', markersize=4, label='seg') 
-	plt.ylim(0, 3.0)
+	if (mode == 'tensorsketch'):
+		plt.plot(x_axis, sigma_sketch, color='green', linestyle='dashed', linewidth = 1, 
+		         marker='o', markerfacecolor='black', markersize=4, label='tensorsketch') 
+	# plt.plot(x_axis, sigma_sketch_ttsketch['cs'], color='red', linestyle='dashed', linewidth = 1, 
+	#          marker='o', markerfacecolor='black', markersize=4, label='cs') 
+	if (mode == 'ttsketch'):
+		print(sigma_sketch_ttsketch['srht'], 'mark')
+		plt.plot(x_axis, sigma_sketch_ttsketch['srht'], color='blue', linestyle='dashed', linewidth = 1, 
+		         marker='o', markerfacecolor='black', markersize=4, label='srht') 
+		# plt.plot(x_axis, sigma_sketch_ttsketch['seg'], color='pink', linestyle='dashed', linewidth = 1, 
+		#          marker='o', markerfacecolor='black', markersize=4, label='seg') 
+	plt.ylim(0, 10.0)
 	plt.xlabel('K: sketch rows') 
 	plt.ylabel('sigma_sketch: time/time') 
 	plt.title('n_{}_d_{}_p_{}'.format(n, d, p)) 
 	plt.legend()
-	plt.savefig('./plots/' + 'sigma_sketch:n_{}_d_{}_p_{}.png'.format(n, d, p))
+	plt.savefig('./plots/{}/'.format(mode) + 'sigma_sketch:n_{}_d_{}_p_{}.png'.format(n, d, p))
 	plt.clf()
 
-	# plt.plot(x_axis, gamma, color='green', linestyle='dashed', linewidth = 1, 
-	#          marker='o', markerfacecolor='black', markersize=4, label='tensorsketch') 
+	if (mode == 'tensorsketch'):
+		plt.plot(x_axis, gamma, color='green', linestyle='dashed', linewidth = 1, 
+		         marker='o', markerfacecolor='black', markersize=4, label='tensorsketch') 
 	plt.plot(x_axis, gamma_ttsketch['cs'], color='red', linestyle='dashed', linewidth = 1, 
 	         marker='o', markerfacecolor='black', markersize=4, label='cs') 
-	# plt.plot(x_axis, gamma_ttsketch['srht'], color='blue', linestyle='dashed', linewidth = 1, 
-	#          marker='o', markerfacecolor='black', markersize=4, label='srht') 
-	# plt.plot(x_axis, gamma_ttsketch['seg'], color='pink', linestyle='dashed', linewidth = 1, 
-	#          marker='o', markerfacecolor='black', markersize=4, label='seg') 
+	if (mode == 'ttsketch'):
+		plt.plot(x_axis, gamma_ttsketch['srht'], color='blue', linestyle='dashed', linewidth = 1, 
+		         marker='o', markerfacecolor='black', markersize=4, label='srht') 
+		plt.plot(x_axis, gamma_ttsketch['seg'], color='pink', linestyle='dashed', linewidth = 1, 
+		         marker='o', markerfacecolor='black', markersize=4, label='seg') 
 	plt.ylim(0, 0.2)
 	plt.xlabel('K: sketch rows') 
 	plt.ylabel('gamma: eval/eval - 1') 
 	plt.title('n_{}_d_{}_p_{}'.format(n, d, p)) 
 	plt.legend()
-	plt.savefig('./plots/' + 'gamma:n_{}_d_{}_p_{}.png'.format(n, d, p))
+	plt.savefig('./plots/{}/'.format(mode) + 'gamma:n_{}_d_{}_p_{}.png'.format(n, d, p))
 	plt.clf()
