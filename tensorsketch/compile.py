@@ -12,5 +12,5 @@ repo_home = os.environ['repo_home']
 link_repo_home = '-I{}'.format(repo_home)
 link_eigen = '-I{}'.format(eigen_path)
 
-command = 'g++ -O0 main.cpp {} {} -std=c++11 -o .main.out'.format(link_eigen, link_repo_home)
+command = 'g++ -O3 main.cpp {} {} -std=c++11 -o .main.out'.format(link_eigen, link_repo_home)
 os.system(command)

@@ -3,12 +3,13 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt 
 import itertools
 import math
+import os
 
 ttsketch = ['seg', 'cs', 'srht']
 vanilla = 'vanilla'
 
-mode = 'ttsketch'
-# MODE = 'tensorsketch'
+# mode = 'ttsketch'
+mode = 'tensorsketch'
 
 N = [
 	'512', 
@@ -24,8 +25,8 @@ TRIALS = range(20)
 K = [4**2, 8**2, 16**2, 32**2, 64**2, 128**2, 256**2]
 
 for n, d, p in itertools.product(N, D, P):
-	sketch_log_folder = '../tensorsketch/log/'
-	vanilla_log_folder = '../../../data/vanillaLR/log/vanilla/'
+	sketch_log_folder = '../tensorsketch/log/O3/'
+	vanilla_log_folder = '../../../data/vanillaLR/log/O3/vanilla/'
 	x_axis = list(K)
 	for i in range(len(K)):
 		x_axis[i] = int(math.sqrt(x_axis[i]))
@@ -74,7 +75,7 @@ for n, d, p in itertools.product(N, D, P):
 		sigma_ttsketch[prog] = []
 		sigma_approx_ttsketch[prog] = []
 		sigma_sketch_ttsketch[prog] = []
-		sketch_log_folder = '../../../data/ttsketch/log/{}/'.format(prog)
+		sketch_log_folder = '../../../data/ttsketch/log/O3/{}/'.format(prog)
 		for k in x_axis:
 			opt_time = 0
 			opt_eval = 0
@@ -107,6 +108,11 @@ for n, d, p in itertools.product(N, D, P):
 			sigma_approx_ttsketch[prog].append(approx_time/opt_time)
 			sigma_sketch_ttsketch[prog].append(sketch_time/opt_time)
 
+
+	try:
+		os.makedirs('./plots/{}/'.format(mode))
+	except:
+		pass
 
 	if (mode == 'tensorsketch'):
 		plt.plot(x_axis, sigma, color='green', linestyle='dashed', linewidth = 1, 
@@ -147,15 +153,15 @@ for n, d, p in itertools.product(N, D, P):
 	if (mode == 'tensorsketch'):
 		plt.plot(x_axis, sigma_sketch, color='green', linestyle='dashed', linewidth = 1, 
 		         marker='o', markerfacecolor='black', markersize=4, label='tensorsketch') 
-	# plt.plot(x_axis, sigma_sketch_ttsketch['cs'], color='red', linestyle='dashed', linewidth = 1, 
-	#          marker='o', markerfacecolor='black', markersize=4, label='cs') 
+	plt.plot(x_axis, sigma_sketch_ttsketch['cs'], color='red', linestyle='dashed', linewidth = 1, 
+	         marker='o', markerfacecolor='black', markersize=4, label='cs') 
 	if (mode == 'ttsketch'):
 		print(sigma_sketch_ttsketch['srht'], 'mark')
 		plt.plot(x_axis, sigma_sketch_ttsketch['srht'], color='blue', linestyle='dashed', linewidth = 1, 
 		         marker='o', markerfacecolor='black', markersize=4, label='srht') 
-		# plt.plot(x_axis, sigma_sketch_ttsketch['seg'], color='pink', linestyle='dashed', linewidth = 1, 
-		#          marker='o', markerfacecolor='black', markersize=4, label='seg') 
-	plt.ylim(0, 10.0)
+		plt.plot(x_axis, sigma_sketch_ttsketch['seg'], color='pink', linestyle='dashed', linewidth = 1, 
+		         marker='o', markerfacecolor='black', markersize=4, label='seg') 
+	plt.ylim(0, 3.0)
 	plt.xlabel('K: sketch rows') 
 	plt.ylabel('sigma_sketch: time/time') 
 	plt.title('n_{}_d_{}_p_{}'.format(n, d, p)) 

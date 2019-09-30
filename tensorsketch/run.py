@@ -13,10 +13,12 @@ from parallel_prog import run_parallel_progs_in_threads as RPPIT
 repo_home = os.environ['repo_home']
 
 N = [512]
-D = [4, 8, 16, 32, 64]
+# D = [4, 8, 16, 32, 64]
+D = [16, 32, 64]
 V = range(20)
 P = [2]
 K = [256**2, 128**2, 64**2, 32**2, 16**2, 8**2, 4**2]
+# K = [256**2, 128**2,]
 TRIALS = range(20)
 
 # N = [512]
